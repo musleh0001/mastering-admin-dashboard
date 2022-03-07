@@ -2,8 +2,14 @@ from django.contrib import admin
 from django.contrib import messages
 from django.db.models import Count
 from django.utils import timezone
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from rangefilter.filter import DateTimeRangeFilter
 from django_summernote.admin import SummernoteModelAdmin
-from main.models import Blog, Comment, Category
+from import_export.admin import ImportExportModelAdmin
+
+from main.resources import CommentResource
+from leaflet.admin import LeafletGeoAdmin
+from main.models import Blog, Comment, Category, Place
 
 
 class CommentInline(admin.StackedInline):
@@ -23,7 +29,7 @@ class BlogAdmin(SummernoteModelAdmin):
         "days_since_creation",
         "no_of_comments",
     ]
-    list_filter = ["is_draft", "date_created"]
+    list_filter = ["is_draft", ("date_created", DateTimeRangeFilter)]
     # ordering = ("title", "-date_created")
     search_fields = ["title"]
     prepopulated_fields = {"slug": ("title",)}
@@ -31,6 +37,8 @@ class BlogAdmin(SummernoteModelAdmin):
     actions = ["set_blogs_to_published"]
     date_hierarchy = "date_created"
     inlines = [CommentInline]
+    filter_horizontal = ["categories"]
+    list_select_related = True
 
     summernote_fields = ["body"]
 
@@ -46,7 +54,7 @@ class BlogAdmin(SummernoteModelAdmin):
             "Advanced options",
             {
                 "classes": ("collapse", "wide", "extrapretty"),
-                "fields": ("is_draft",),
+                "fields": ("is_draft", "categories"),
                 "description": "Options to configure blog creation",
             },
         ),
@@ -75,6 +83,17 @@ class BlogAdmin(SummernoteModelAdmin):
             return ["title", "-date_created"]
         return ["title"]
 
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        try:
+            del actions["delete_selected"]
+        except KeyError:
+            pass
+        return actions
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
     @admin.action(description="Mark selected blog(s) as published")
     def set_blogs_to_published(self, request, queryset):
         count = queryset.update(is_draft=False)
@@ -86,12 +105,21 @@ class BlogAdmin(SummernoteModelAdmin):
 
 
 @admin.register(Comment)
-class CommentAdmin(SummernoteModelAdmin):
+class CommentAdmin(ImportExportModelAdmin):
     list_display = ["blog", "text", "date_created", "is_active"]
     list_editable = ["text", "is_active"]
     list_per_page = 20
+    list_filter = [("blog", RelatedDropdownFilter)]
+    resource_class = CommentResource
+    list_select_related = True
+    raw_id_fields = ["blog"]
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Place)
+class PlaceAdmin(LeafletGeoAdmin):
     pass

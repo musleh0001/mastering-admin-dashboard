@@ -1,4 +1,5 @@
 from django.db import models
+from djgeojson.fields import PointField
 
 # from django.utils import timezone
 
@@ -34,6 +35,17 @@ class Comment(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Categories"
+
+
+class Place(models.Model):
+    name = models.CharField(max_length=255)
+    location = PointField()
 
     def __str__(self):
         return self.name

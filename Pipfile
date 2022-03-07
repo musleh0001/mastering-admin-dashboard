@@ -6,6 +6,14 @@ name = "pypi"
 [packages]
 django = "*"
 django-summernote = "*"
+django-admin-list-filter-dropdown = "*"
+django-admin-rangefilter = "*"
+django-leaflet = "*"
+django-geojson = {extras = ["field"], version = "*"}
+django-import-export = "*"
+django-grappelli = "*"
+django-admin-honeypot = "*"
+django-jazzmin = "*"
 
 [dev-packages]
 black = "*"

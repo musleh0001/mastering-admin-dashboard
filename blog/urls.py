@@ -8,7 +8,9 @@ admin.site.site_title = "Super Blog Admin"
 admin.site.index_title = "Super Blog Administration"
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    # path("grappelli/", include("grappelli.urls")),  # grappelli URL
+    path("admin/", include("admin_honeypot.urls", namespace="admin_honeypot")),
+    path("secret/", admin.site.urls),
     path("summernote/", include("django_summernote.urls")),
 ]
 
