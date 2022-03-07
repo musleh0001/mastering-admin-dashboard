@@ -1,5 +1,7 @@
 from django.db import models
 
+# from django.utils import timezone
+
 
 class Blog(models.Model):
     title = models.CharField(max_length=255)
@@ -11,3 +13,8 @@ class Blog(models.Model):
 
     def __str__(self):
         return self.title
+
+    # @property
+    # def days_since_creation(self):
+    #     diff = timezone.now() - self.date_created
+    #     return diff.days
