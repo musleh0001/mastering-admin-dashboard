@@ -1,16 +1,27 @@
 from django.contrib import admin
 from django.contrib import messages
+from django.db.models import Count
 from django.utils import timezone
-from main.models import Blog
+from django_summernote.admin import SummernoteModelAdmin
+from main.models import Blog, Comment, Category
 
 
-class BlogAdmin(admin.ModelAdmin):
+class CommentInline(admin.StackedInline):
+    model = Comment
+    fields = ["text", "is_active"]
+    extra = 0
+    classes = ["collapse"]
+
+
+@admin.register(Blog)
+class BlogAdmin(SummernoteModelAdmin):
     list_display = [
         "title",
         "date_created",
         "last_modified",
         "is_draft",
         "days_since_creation",
+        "no_of_comments",
     ]
     list_filter = ["is_draft", "date_created"]
     # ordering = ("title", "-date_created")
@@ -19,6 +30,10 @@ class BlogAdmin(admin.ModelAdmin):
     list_per_page = 50
     actions = ["set_blogs_to_published"]
     date_hierarchy = "date_created"
+    inlines = [CommentInline]
+
+    summernote_fields = ["body"]
+
     # fields = [("title", "slug"), "body", "is_draft"]
     fieldsets = (
         (
@@ -30,12 +45,25 @@ class BlogAdmin(admin.ModelAdmin):
         (
             "Advanced options",
             {
+                "classes": ("collapse", "wide", "extrapretty"),
                 "fields": ("is_draft",),
                 "description": "Options to configure blog creation",
             },
         ),
     )
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(comments_count=Count("comments"))
+        return queryset
+
+    @admin.display(empty_value="???")
+    def no_of_comments(self, blog):
+        return blog.comments_count
+
+    no_of_comments.admin_order_field = "comments_count"
+
+    @admin.display(empty_value="???")
     def days_since_creation(self, blog):
         diff = timezone.now() - blog.date_created
         return diff.days
@@ -57,4 +85,13 @@ class BlogAdmin(admin.ModelAdmin):
         )
 
 
-admin.site.register(Blog, BlogAdmin)
+@admin.register(Comment)
+class CommentAdmin(SummernoteModelAdmin):
+    list_display = ["blog", "text", "date_created", "is_active"]
+    list_editable = ["text", "is_active"]
+    list_per_page = 20
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    pass
